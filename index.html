@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base target="_self">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Safety Monitoring Dashboard</title>
+    <meta name="description" content="Real-time industrial safety monitoring dashboard for temperature, gas, fire, and light detection">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#1a202c",
+                        secondary: "#2d3748",
+                        accent: "#3182ce",
+                        danger: "#e53e3e",
+                        warning: "#d69e2e",
+                        safe: "#38a169",
+                        dark: "#0f172a",
+                        "dark-light": "#1e293b"
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['Roboto Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .danger-bg {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+        }
+        .safe-bg {
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+        }
+        .glass-effect {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .chart-container {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .login-container {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-dark text-gray-200">
+    <!-- Login Page -->
+    <div id="login-page" class="fixed inset-0 z-50 flex items-center justify-center login-container">
+        <div class="glass-effect rounded-2xl p-8 max-w-md w-full mx-4">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-white mb-2">Industrial Safety Dashboard</h1>
+                <p class="text-gray-400">Secure Monitoring System</p>
+            </div>
+            
+            <div class="mb-6">
+                <div class="flex items-center justify-center mb-6">
+                    <div class="w-16 h-16 rounded-full bg-accent flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-2xl text-white"></i>
+                    </div>
+                </div>
+                <h2 class="text-xl font-semibold text-white text-center mb-2">Authentication Required</h2>
+                <p class="text-gray-400 text-center text-sm">Enter your credentials to access the monitoring dashboard</p>
+            </div>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                    <input type="text" id="username" class="w-full px-4 py-3 bg-dark-light border border-gray-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent text-white" placeholder="Enter username" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                    <input type="password" id="password" class="w-full px-4 py-3 bg-dark-light border border-gray-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent text-white" placeholder="Enter password" required>
+                </div>
+                <div id="login-error" class="text-danger text-sm hidden">
+                    <i class="fas fa-exclamation-circle mr-2"></i>Invalid credentials. Please try again.
+                </div>
+                <button type="submit" class="w-full py-3 bg-accent hover:bg-blue-600 text-white font-semibold rounded-lg transition duration-200">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login to Dashboard
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center text-sm text-gray-500">
+                <p>Default credentials: admin / 1234</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="hidden min-h-screen">
+        <!-- Alert Banner -->
+        <div id="alert-banner" class="safe-bg text-white py-3 px-4">
+            <div class="container mx-auto flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-3 text-xl"></i>
+                    <span class="font-semibold">System Normal</span>
+                    <span class="ml-4 text-sm opacity-90">All sensors operating within safe parameters</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="current-time" class="mono text-sm"></span>
+                    <button id="logout-btn" class="text-sm hover:opacity-80 transition">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="bg-primary border-b border-gray-800 py-6">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold text-white">
+                            <i class="fas fa-industry mr-3 text-accent"></i>Industrial Safety Monitoring Dashboard
+                        </h1>
+                        <p class="text-gray-400 mt-2">Real-time sensor monitoring and safety alerts</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 rounded-full bg-safe pulse"></div>
+                            <span class="text-sm">Live</span>
+                        </div>
+                        <button id="download-csv" class="px-4 py-2 bg-dark-light hover:bg-gray-800 rounded-lg border border-gray-700 transition">
+                            <i class="fas fa-download mr-2"></i>Export CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="container mx-auto px-4 py-8">
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-dark-light rounded-xl p-6 border border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Temperature</p>
+                            <p class="text-2xl font-bold text-white mt-2"><span id="current-temp">24.5</span>°C</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-blue-900/30 flex items-center justify-center">
+                            <i class="fas fa-thermometer-half text-xl text-accent"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-400">Status: <span class="text-safe font-medium">Normal</span></p>
+                    </div>
+                </div>
+                
+                <div class="bg-dark-light rounded-xl p-6 border border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Gas Detection</p>
+                            <p id="gas-status" class="text-2xl font-bold text-white mt-2">OFF</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-green-900/30 flex items-center justify-center">
+                            <i class="fas fa-wind text-xl text-safe"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-400">Last check: <span class="mono">Just now</span></p>
+                    </div>
+                </div>
+                
+                <div class="bg-dark-light rounded-xl p-6 border border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Fire Detection</p>
+                            <p id="fire-status" class="text-2xl font-bold text-white mt-2">OFF</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-green-900/30 flex items-center justify-center">
+                            <i class="fas fa-fire-extinguisher text-xl text-safe"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-400">Last check: <span class="mono">Just now</span></p>
+                    </div>
+                </div>
+                
+                <div class="bg-dark-light rounded-xl p-6 border border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Light Status</p>
+                            <p id="light-status" class="text-2xl font-bold text-white mt-2">Light</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-yellow-900/30 flex items-center justify-center">
+                            <i class="fas fa-lightbulb text-xl text-warning"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-400">Sensor: LDR Active</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-white">Temperature Trend (Last 30 minutes)</h2>
+                    <div class="text-sm text-gray-400">
+                        <span class="mono">Auto-refresh: <span id="refresh-timer">5</span>s</span>
+                    </div>
+                </div>
+                <div class="chart-container rounded-xl p-6">
+                    <canvas id="temperature-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Monitoring Table -->
+            <div class="bg-dark-light rounded-xl border border-gray-800 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-800">
+                    <h2 class="text-xl font-semibold text-white">Sensor Monitoring Logs</h2>
+                    <p class="text-gray-400 text-sm mt-1">Latest 20 records from industrial sensors</p>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-900/50">
+                                <th class="py-3 px-6 text-left text-gray-300 font-medium">S.No</th>
+                                <th class="py-3 px-6 text-left text-gray-300 font-medium">Temperature (°C)</th>
+                                <th class="py-3 px-6 text-left text-gray-300 font-medium">Gas Detection</th>
+                                <th class="py-3 px-6 text-left text-gray-300 font-medium">Fire Detection</th>
+                                <th class="py-3 px-6 text-left text-gray-300 font-medium">LDR Status</th>
+                                <th class="py-3 px-6 text-left text-gray-300 font-medium">Date & Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sensor-table-body">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="px-6 py-4 border-t border-gray-800 flex items-center justify-between">
+                    <div class="text-sm text-gray-400">
+                        <span id="total-records">20</span> records displayed
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="refresh-data" class="px-4 py-2 bg-accent hover:bg-blue-600 rounded-lg text-sm font-medium transition">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-12 py-6 border-t border-gray-800">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-gray-400 text-sm">
+                            <i class="fas fa-shield-alt mr-2 text-accent"></i>Industrial Safety Monitoring System v1.0
+                        </p>
+                    </div>
+                    <div class="text-gray-500 text-sm">
+                        <p>© 2024 Industrial Safety Dashboard. All monitoring data is simulated for demonstration.</p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Data layer
+        const sensorData = [];
+        const temperatureHistory = [];
+        let chartInstance = null;
+        let updateInterval = null;
+        let refreshTimer = 5;
+        let isDangerDetected = false;
+
+        // Login credentials
+        const validCredentials = {
+            "username": "admin",
+            "password": "1234"
+        };
+
+        // Generate initial data
+        function generateInitialData() {
+            const now = new Date();
+            for (let i = 0; i < 20; i++) {
+                const recordTime = new Date(now.getTime() - (19 - i) * 30000); // 30-second intervals
+                const temp = 20 + Math.random() * 10; // 20-30°C
+                const gas = Math.random() > 0.9 ? "ON" : "OFF";
+                const fire = Math.random() > 0.95 ? "ON" : "OFF";
+                const ldr = Math.random() > 0.3 ? "Light" : "Dark";
+                
+                sensorData.push({
+                    "id": i + 1,
+                    "temperature": temp.toFixed(1),
+                    "gas": gas,
+                    "fire": fire,
+                    "ldr": ldr,
+                    "timestamp": recordTime.toISOString(),
+                    "displayTime": recordTime.toLocaleString()
+                });
+                
+                temperatureHistory.push({
+                    "time": recordTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+                    "temp": temp
+                });
+            }
+        }
+
+        // Add new sensor reading
+        function addNewSensorReading() {
+            const now = new Date();
+            const temp = 20 + Math.random() * 10;
+            const gas = Math.random() > 0.9 ? "ON" : "OFF";
+            const fire = Math.random() > 0.95 ? "ON" : "OFF";
+            const ldr = Math.random() > 0.3 ? "Light" : "Dark";
+            
+            const newRecord = {
+                "id": sensorData.length > 0 ? sensorData[sensorData.length - 1].id + 1 : 1,
+                "temperature": temp.toFixed(1),
+                "gas": gas,
+                "fire": fire,
+                "ldr": ldr,
+                "timestamp": now.toISOString(),
+                "displayTime": now.toLocaleString()
+            };
+            
+            sensorData.push(newRecord);
+            if (sensorData.length > 20) {
+                sensorData.shift();
+            }
+            
+            // Update temperature history for chart
+            temperatureHistory.push({
+                "time": now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+                "temp": temp
+            });
+            if (temperatureHistory.length > 30) {
+                temperatureHistory.shift();
+            }
+            
+            updateDashboard();
+        }
+
+        // Reusable render functions
+        function renderSensorTableRows(data) {
+            return data.map(record => `
+                <tr class="border-b border-gray-800 hover:bg-gray-900/30 transition">
+                    <td class="py-4 px-6 mono text-gray-300">${record.id}</td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-thermometer-half mr-3 text-accent"></i>
+                            <span class="font-medium">${record.temperature}°C</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="px-3 py-1 rounded-full text-sm font-medium ${record.gas === "ON" ? "bg-danger/20 text-danger" : "bg-safe/20 text-safe"}">
+                            <i class="fas ${record.gas === "ON" ? "fa-exclamation-triangle" : "fa-check-circle"} mr-2"></i>
+                            ${record.gas}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="px-3 py-1 rounded-full text-sm font-medium ${record.fire === "ON" ? "bg-danger/20 text-danger" : "bg-safe/20 text-safe"}">
+                            <i class="fas ${record.fire === "ON" ? "fa-fire" : "fa-check-circle"} mr-2"></i>
+                            ${record.fire}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="px-3 py-1 rounded-full text-sm font-medium ${record.ldr === "Light" ? "bg-warning/20 text-warning" : "bg-gray-700 text-gray-300"}">
+                            <i class="fas ${record.ldr === "Light" ? "fa-sun" : "fa-moon"} mr-2"></i>
+                            ${record.ldr}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6 mono text-sm text-gray-400">${record.displayTime}</td>
+                </tr>
+            `).join("");
+        }
+
+        function renderStatsOverview(data) {
+            const latest = data[data.length - 1];
+            document.getElementById("current-temp").textContent = latest.temperature;
+            document.getElementById("gas-status").textContent = latest.gas;
+            document.getElementById("fire-status").textContent = latest.fire;
+            document.getElementById("light-status").textContent = latest.ldr;
+            
+            // Update status colors
+            document.getElementById("gas-status").className = `text-2xl font-bold mt-2 ${latest.gas === "ON" ? "text-danger" : "text-white"}`;
+            document.getElementById("fire-status").className = `text-2xl font-bold mt-2 ${latest.fire === "ON" ? "text-danger" : "text-white"}`;
+            document.getElementById("light-status").className = `text-2xl font-bold mt-2 ${latest.ldr === "Light" ? "text-warning" : "text-gray-300"}`;
+        }
+
+        function renderAlertBanner(data) {
+            const latest = data[data.length - 1];
+            const hasDanger = latest.gas === "ON" || latest.fire === "ON";
+            const alertBanner = document.getElementById("alert-banner");
+            
+            if (hasDanger && !isDangerDetected) {
+                alertBanner.className = "danger-bg text-white py-3 px-4";
+                alertBanner.innerHTML = `
+                    <div class="container mx-auto flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-triangle mr-3 text-xl"></i>
+                            <span class="font-semibold">⚠️ Danger Detected</span>
+                            <span class="ml-4 text-sm opacity-90">Immediate attention required!</span>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <span id="current-time" class="mono text-sm"></span>
+                            <button id="logout-btn" class="text-sm hover:opacity-80 transition">
+                                <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                            </button>
+                        </div>
+                    </div>
+                `;
+                isDangerDetected = true;
+            } else if (!hasDanger && isDangerDetected) {
+                alertBanner.className = "safe-bg text-white py-3 px-4";
+                alertBanner.innerHTML = `
+                    <div class="container mx-auto flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle mr-3 text-xl"></i>
+                            <span class="font-semibold">System Normal</span>
+                            <span class="ml-4 text-sm opacity-90">All sensors operating within safe parameters</span>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <span id="current-time" class="mono text-sm"></span>
+                            <button id="logout-btn" class="text-sm hover:opacity-80 transition">
+                                <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                            </button>
+                        </div>
+                    </div>
+                `;
+                isDangerDetected = false;
+            }
+        }
+
+        function renderTemperatureChart() {
+            const ctx = document.getElementById('temperature-chart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: temperatureHistory.map(d => d.time),
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: temperatureHistory.map(d => d.temp),
+                        borderColor: '#3182ce',
+                        backgroundColor: 'rgba(49, 130, 206, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#3182ce',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e2e8f0',
+                                font: {
+                                    family: "'Inter', sans-serif"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: '#e2e8f0',
+                            bodyColor: '#cbd5e0',
+                            borderColor: '#3182ce',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    return `Temperature: ${context.parsed.y.toFixed(1)}°C`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: {
+                                    family: "'Roboto Mono', monospace"
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: {
+                                    family: "'Roboto Mono', monospace"
+                                },
+                                callback: function(value) {
+                                    return value + '°C';
+                                }
+                            },
+                            suggestedMin: 15,
+                            suggestedMax: 35
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDashboard() {
+            document.getElementById("sensor-table-body").innerHTML = renderSensorTableRows(sensorData);
+            document.getElementById("total-records").textContent = sensorData.length;
+            renderStatsOverview(sensorData);
+            renderAlertBanner(sensorData);
+            renderTemperatureChart();
+            updateCurrentTime();
+        }
+
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+            const dateString = now.toLocaleDateString();
+            document.getElementById("current-time").textContent = `${dateString} ${timeString}`;
+        }
+
+        function exportToCSV() {
+            const headers = ["S.No", "Temperature (°C)", "Gas Detection", "Fire Detection", "LDR Status", "Date & Time"];
+            const csvData = [
+                headers.join(","),
+                ...sensorData.map(record => [
+                    record.id,
+                    record.temperature,
+                    record.gas,
+                    record.fire,
+                    record.ldr,
+                    `"${record.displayTime}"`
+                ].join(","))
+            ].join("\n");
+            
+            const blob = new Blob([csvData], { type: "text/csv" });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `sensor-data-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function startAutoRefresh() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+            }
+            
+            updateInterval = setInterval(() => {
+                addNewSensorReading();
+                refreshTimer = 5;
+            }, 5000);
+            
+            // Update countdown timer every second
+            setInterval(() => {
+                refreshTimer--;
+                if (refreshTimer < 0) refreshTimer = 5;
+                document.getElementById("refresh-timer").textContent = refreshTimer;
+            }, 1000);
+        }
+
+        // Initialize dashboard
+        function initializeDashboard() {
+            generateInitialData();
+            updateDashboard();
+            startAutoRefresh();
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+        }
+
+        // Event handlers
+        function setupEventListeners() {
+            // Login form
+            document.getElementById("login-form").addEventListener("submit", function(e) {
+                e.preventDefault();
+                const username = document.getElementById("username").value;
+                const password = document.getElementById("password").value;
+                const errorElement = document.getElementById("login-error");
+                
+                if (username === validCredentials.username && password === validCredentials.password) {
+                    document.getElementById("login-page").classList.add("hidden");
+                    document.getElementById("dashboard").classList.remove("hidden");
+                    initializeDashboard();
+                } else {
+                    errorElement.classList.remove("hidden");
+                    document.getElementById("password").value = "";
+                }
+            });
+
+            // Logout button
+            document.addEventListener("click", function(e) {
+                if (e.target.closest("#logout-btn")) {
+                    document.getElementById("login-page").classList.remove("hidden");
+                    document.getElementById("dashboard").classList.add("hidden");
+                    document.getElementById("username").value = "";
+                    document.getElementById("password").value = "";
+                    document.getElementById("login-error").classList.add("hidden");
+                    
+                    if (updateInterval) {
+                        clearInterval(updateInterval);
+                        updateInterval = null;
+                    }
+                }
+            });
+
+            // Refresh data button
+            document.getElementById("refresh-data").addEventListener("click", function() {
+                addNewSensorReading();
+                refreshTimer = 5;
+            });
+
+            // Download CSV button
+            document.getElementById("download-csv").addEventListener("click", exportToCSV);
+
+            // Prevent default anchor behavior
+            document.addEventListener("click", function(event) {
+                const link = event.target.closest("a[href^='#']");
+                if (link) {
+                    event.preventDefault();
+                }
+            });
+        }
+
+        // Initialize on load
+        document.addEventListener("DOMContentLoaded", function() {
+            setupEventListeners();
+            updateCurrentTime();
+        });
+    </script>
+</body>
+</html>
