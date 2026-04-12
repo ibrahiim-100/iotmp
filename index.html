@@ -283,7 +283,7 @@
 
     <script>
         // Data layer
-        let sensorData = [];
+        window.sensorData = [];
         const temperatureHistory = [];
         let chartInstance = null;
         let updateInterval = null;
@@ -533,7 +533,7 @@
             });
         }
 
-        function updateDashboard() {
+window.updateDashboard = function() {
             document.getElementById("sensor-table-body").innerHTML = renderSensorTableRows(sensorData);
             document.getElementById("total-records").textContent = sensorData.length;
             renderStatsOverview(sensorData);
@@ -665,8 +665,7 @@
   import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-database.js";
 
   const app = initializeApp({
-    databaseURL: "https://iot-safety-system-default-rtdb.asia-southeast1.firebasedatabase.app"
-  });
+    databaseURL: "https://iot-safety-60844-default-rtdb.asia-southeast1.firebasedatabase.app"  });
   /*fetch("https://iot-safety-system-default-rtdb.asia-southeast1.firebasedatabase.app/safety_data.json", {
   method: "POST",
   body: JSON.stringify({ temp: 32.5, smoke: "OFF", fire: "OFF", light: "Light", time: new Date().toISOString() })
@@ -679,16 +678,20 @@
     if (!raw) return;
 
     // Convert Firebase object to array
-    sensorData = Object.entries(raw).reverse().slice(0, 50).map(([key, row], i) => ({
+    window.sensorData = Object.entries(raw).reverse().slice(0, 50).map(([key, row], i) => ({
       id: i + 1,
       temperature: parseFloat(row.temp) || 0,
       gas: row.smoke || 'OFF',
       fire: row.fire || 'OFF',
       ldr: row.light || 'Unknown',
-      displayTime: row.time || new Date().toLocaleString()
+    //   displayTime: row.time || new Date().toLocaleString()
+    displayTime: row.time ? new Date(row.time).toLocaleString('en-IN', {
+  day: '2-digit', month: 'short', year: 'numeric',
+  hour: '2-digit', minute: '2-digit', second: '2-digit'
+}) : new Date().toLocaleString()
     }));
 
-    updateDashboard(); // This function already exists in your file
+    window.updateDashboard(); // This function already exists in your file
   });
 </script>
 </body>
