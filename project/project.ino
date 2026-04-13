@@ -91,7 +91,7 @@ char check(char* ex,int timeout)
 } 
 
 char buff[200],k=0;
-void upload(unsigned int s1,const char *s2,const char *s3,const char *s4)
+void upload(unsigned int s1,const char *s2,const char *s3,const char *s4);
 char readserver(void);
 void clearserver(void);
 
