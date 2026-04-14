@@ -238,40 +238,47 @@ void loop()
       
 }
 char bf2[50];
-void upload(unsigned int s1,const char *s2,const char *s3,const char *s4)
+void upload(unsigned int s1, const char *s2, const char *s3, const char *s4)
 {
   delay(2000);
-  lcd.setCursor(15, 1);lcd.print("U");
+  lcd.setCursor(15, 1); lcd.print("U");
   myserialFlush();
-  mySerial.println("AT+CIPSTART=4,\"TCP\",\"projectsfactoryserver.in\",80");
-    
-  //http://projectsfactoryserver.in/storedata.php?name=pf5&s1=25&s2=35
-  //sprintf(buff,"GET http://embeddedspot.top/iot/storedata.php?name=iot139&s1=%u&s2=%u&s3=%u\r\n\r\n",s1,s2);
-  
-      delay(8000);
-     
-      
-      memset(buff,0,strlen(buff));   
-      sprintf(buff,"GET http://projectsfactoryserver.in/storedata.php?name=iot1892&s1=%u&s2=%s&s3=%s&s4=%s\r\n\r\n",s1,s2,s3,s4);
-//      buff = buff + moss + "\r\n\r\n";
-     // strcat(buff,s3);
-         
-      myserialFlush();
-      sprintf(bf2,"AT+CIPSEND=4,%u",strlen(buff));
-      mySerial.println(bf2);
-      
-         delay(5000);
-          
-          
-          myserialFlush();
-          mySerial.print(buff);
-         
-              delay(2000);
-              
-              mySerial.println("AT+CIPCLOSE");
-       lcd.setCursor(15, 1);lcd.print(" ");  
-}
 
+  // Connect to Firebase over SSL
+  mySerial.println("AT+CIPSTART=4,\"SSL\",\"iot-safety-60844-default-rtdb.asia-southeast1.firebasedatabase.app\",443");
+  delay(8000);
+
+  // Build JSON body
+  char jsonBody[100];
+  sprintf(jsonBody, "{\"temp\":%u,\"smoke\":\"%s\",\"fire\":\"%s\",\"light\":\"%s\"}", s1, s2, s3, s4);
+  int jsonLen = strlen(jsonBody);
+
+  // Build full HTTP POST request
+  memset(buff, 0, sizeof(buff));
+  sprintf(buff,
+    "POST /safety_data.json HTTP/1.1\r\n"
+    "Host: iot-safety-60844-default-rtdb.asia-southeast1.firebasedatabase.app\r\n"
+    "Content-Type: application/json\r\n"
+    "Content-Length: %d\r\n"
+    "Connection: close\r\n"
+    "\r\n"
+    "%s",
+    jsonLen, jsonBody
+  );
+
+  // Send it
+  myserialFlush();
+  sprintf(bf2, "AT+CIPSEND=4,%u", strlen(buff));
+  mySerial.println(bf2);
+  delay(5000);
+
+  myserialFlush();
+  mySerial.print(buff);
+  delay(3000);
+
+  mySerial.println("AT+CIPCLOSE");
+  lcd.setCursor(15, 1); lcd.print(" ");
+}
 void upload1(int s1,const char *s2)
 {
   delay(2000);
@@ -417,7 +424,8 @@ void wifiinit()
   if(check((char*)"OK",300))goto cagain;    
   mySerial.println("AT+CIPMUX=1");
   delay(1000);
- 
+  mySerial.println("AT+CIPSSLSIZE=4096");  // ADD THIS
+  delay(1000);
 
   lcd.clear();lcd.setCursor(0, 0);lcd.print("WIFI READY"); 
 }
