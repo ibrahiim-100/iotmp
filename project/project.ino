@@ -245,7 +245,7 @@ void upload(unsigned int s1, const char *s2, const char *s3, const char *s4)
   myserialFlush();
 
   // Connect to Firebase over SSL
-  mySerial.println("AT+CIPSTART=4,\"SSL\",\"iot-safety-60844-default-rtdb.asia-southeast1.firebasedatabase.app\",443");
+  mySerial.println("AT+CIPSTART=4,\"TCP\",\"iot-safety-60844-default-rtdb.asia-southeast1.firebasedatabase.app\",80");
   delay(8000);
 
   // Build JSON body
