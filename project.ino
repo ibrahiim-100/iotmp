@@ -130,9 +130,9 @@ char bf2[50];
 int g=0,f=0,count=0,lc=0;
 int gk=0;
 
-char smokes[10]="OFF";
-char fires[10]="OFF";
-char ldrs[10]="Dark";
+char smokes[10];
+char fires[10];
+char ldrs[10];
 
 void loop() 
 {
@@ -141,6 +141,7 @@ void loop()
 
   lcd.setCursor(2,0);convertl(tempc); delay(1000);
 
+  memset(smokes,'\0',strlen(smokes));
   if(digitalRead(smoke) == LOW)
   {
     lcd.setCursor(10,0);lcd.print("ON ");    
@@ -154,6 +155,7 @@ void loop()
     strcpy(smokes,"OFF"); 
   }
 
+  memset(fires,'\0',strlen(fires));
   if(digitalRead(fire) == LOW)
   {
     lcd.setCursor(2,1);lcd.print("ON ");    
@@ -176,6 +178,7 @@ void loop()
     digitalWrite(relay_fan, HIGH);  
   }
 
+  memset(ldrs,'\0',strlen(ldrs));    
   if(digitalRead(ldr) == LOW)
   {
     lcd.setCursor(8,1);lcd.print("Light");    
@@ -199,7 +202,9 @@ void loop()
     count = 0;
     delay(1000);
     upload(tempc,smokes,fires,ldrs);  
-    delay(15000); // ThingSpeak requires minimum 15 sec between updates
+    delay(15000);
+    readControls();
+    delay(2000); // ThingSpeak requires minimum 15 sec between updates
   }
 }
 
@@ -220,22 +225,13 @@ void upload(unsigned int s1, const char *s2, const char *s3, const char *s4)
 
   // Build full GET request as one single string
   memset(buff, 0, sizeof(buff));
- sprintf(buff,
-  "GET /update?api_key=%s&field1=%u&field2=%d&field3=%d&field4=%d HTTP/1.1\r\nHost: api.thingspeak.com\r\nConnection: close\r\n\r\n",
-  apiKey, s1,
-  (strcmp(s2,"ON")==0) ? 1 : 0,
-  (strcmp(s3,"ON")==0) ? 1 : 0,
-  (strcmp(s4,"Light")==0) ? 1 : 0
-);
-
-mySerial.print("temp");
-mySerial.print(s1);
-mySerial.print(" smokes");
-mySerial.print(s2);
-mySerial.print(" fires");
-mySerial.print(s3);
-mySerial.print(" ldrs");
-mySerial.println(s4);  
+  sprintf(buff,
+    "GET /update?api_key=%s&field1=%u&field2=%d&field3=%d&field4=%d HTTP/1.1\r\nHost: api.thingspeak.com\r\nConnection: close\r\n\r\n",
+    apiKey, s1,
+    (strcmp(s2,"ON")==0) ? 1 : 0,
+    (strcmp(s3,"ON")==0) ? 1 : 0,
+    (strcmp(s4,"Light")==0) ? 1 : 0
+  );
 
   // Send length then data
   sprintf(bf2, "AT+CIPSEND=4,%u", strlen(buff));
@@ -251,6 +247,62 @@ mySerial.println(s4);
   delay(1000);
   lcd.setCursor(15, 1); lcd.print(" ");
 }
+void readControls()
+{
+  // Close any existing connection
+  mySerial.println("AT+CIPCLOSE=4");
+  delay(1000);
+  myserialFlush();
+
+  // Connect to ThingSpeak control channel
+  mySerial.println("AT+CIPSTART=4,\"TCP\",\"api.thingspeak.com\",80");
+  delay(8000);
+  myserialFlush();
+
+  // Build GET request for last feed
+  memset(buff, 0, sizeof(buff));
+  sprintf(buff,
+    "GET /channels/3348569/feeds/last.json?api_key=MF0F4WE0OGCKHLRT HTTP/1.1\r\nHost: api.thingspeak.com\r\nConnection: close\r\n\r\n"
+  );
+
+  sprintf(bf2, "AT+CIPSEND=4,%u", strlen(buff));
+  mySerial.println(bf2);
+  delay(3000);
+  myserialFlush();
+
+  mySerial.print(buff);
+  delay(5000);
+
+  // Read response
+  String response = "";
+  long timeout = millis() + 5000;
+  while (millis() < timeout) {
+    while (mySerial.available()) {
+      response += (char)mySerial.read();
+    }
+  }
+
+  mySerial.println("AT+CIPCLOSE=4");
+  delay(1000);
+
+  // Parse field1 (fan) and field2 (light)
+  // Response contains something like: "field1":"1","field2":"0"
+  int fanVal   = 0;
+  int lightVal = 0;
+
+  int f1 = response.indexOf("\"field1\":\"");
+  if (f1 >= 0) fanVal = response.charAt(f1 + 10) - '0';
+
+  int f2 = response.indexOf("\"field2\":\"");
+  if (f2 >= 0) lightVal = response.charAt(f2 + 10) - '0';
+
+  // Only apply manual control if no danger detected
+  if (digitalRead(smoke) == HIGH && digitalRead(fire) == HIGH && tempc < 50) {
+    digitalWrite(relay_fan,   fanVal   == 1 ? HIGH : LOW);
+    digitalWrite(relay_light, lightVal == 1 ? HIGH : LOW);
+  }
+}
+
 
 void wifiinit()
 {

@@ -214,6 +214,114 @@
                 </div>
             </div>
 
+
+            <!-- Remote Control Panel -->
+            <div class="bg-dark-light rounded-xl border border-gray-800 p-6 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-white">Remote Control</h2>
+                        <p class="text-gray-400 text-sm mt-1">Control fan and light remotely</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-safe pulse"></div>
+                        <span class="text-sm text-gray-400">Live</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Fan Control -->
+                    <div class="bg-gray-900/50 rounded-xl p-6 border border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-blue-900/30 flex items-center justify-center">
+                                    <i class="fas fa-fan text-xl text-accent" id="fan-icon"></i>
+                                </div>
+                                <div>
+                                    <p class="text-white font-semibold">Exhaust Fan</p>
+                                    <p class="text-gray-400 text-sm">Relay Pin 10</p>
+                                </div>
+                            </div>
+                            <span id="fan-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-700 text-gray-300">OFF</span>
+                        </div>
+                        <button id="fan-btn" onclick="toggleControl('fan')"
+                            class="w-full py-3 rounded-lg font-semibold text-white transition duration-200 bg-gray-700 hover:bg-accent">
+                            <i class="fas fa-power-off mr-2"></i>Turn ON Fan
+                        </button>
+                    </div>
+                    <!-- Light Control -->
+                    <div class="bg-gray-900/50 rounded-xl p-6 border border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-yellow-900/30 flex items-center justify-center">
+                                    <i class="fas fa-lightbulb text-xl text-warning" id="light-icon"></i>
+                                </div>
+                                <div>
+                                    <p class="text-white font-semibold">Light Relay</p>
+                                    <p class="text-gray-400 text-sm">Relay Pin 11</p>
+                                </div>
+                            </div>
+                            <span id="light-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-700 text-gray-300">OFF</span>
+                        </div>
+                        <button id="light-btn" onclick="toggleControl('light')"
+                            class="w-full py-3 rounded-lg font-semibold text-white transition duration-200 bg-gray-700 hover:bg-accent">
+                            <i class="fas fa-power-off mr-2"></i>Turn ON Light
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Remote Control Panel -->
+            <div class="bg-dark-light rounded-xl border border-gray-800 p-6 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-white">Remote Control</h2>
+                        <p class="text-gray-400 text-sm mt-1">Control fan and light remotely</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-safe pulse"></div>
+                        <span class="text-sm text-gray-400">Live</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-gray-900/50 rounded-xl p-6 border border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-blue-900/30 flex items-center justify-center">
+                                    <i class="fas fa-fan text-xl text-accent"></i>
+                                </div>
+                                <div>
+                                    <p class="text-white font-semibold">Exhaust Fan</p>
+                                    <p class="text-gray-400 text-sm">Relay Pin 10</p>
+                                </div>
+                            </div>
+                            <span id="fan-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-700 text-gray-300">OFF</span>
+                        </div>
+                        <button id="fan-btn" onclick="toggleControl('fan')"
+                            class="w-full py-3 rounded-lg font-semibold text-white transition duration-200 bg-gray-700 hover:bg-accent">
+                            <i class="fas fa-power-off mr-2"></i>Turn ON Fan
+                        </button>
+                    </div>
+                    <div class="bg-gray-900/50 rounded-xl p-6 border border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-yellow-900/30 flex items-center justify-center">
+                                    <i class="fas fa-lightbulb text-xl text-warning"></i>
+                                </div>
+                                <div>
+                                    <p class="text-white font-semibold">Light Relay</p>
+                                    <p class="text-gray-400 text-sm">Relay Pin 11</p>
+                                </div>
+                            </div>
+                            <span id="light-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-700 text-gray-300">OFF</span>
+                        </div>
+                        <button id="light-btn" onclick="toggleControl('light')"
+                            class="w-full py-3 rounded-lg font-semibold text-white transition duration-200 bg-gray-700 hover:bg-accent">
+                            <i class="fas fa-power-off mr-2"></i>Turn ON Light
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Chart Section -->
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-4">
@@ -283,8 +391,7 @@
 
     <script>
         // Data layer
-        window.sensorData = [];
-        let sensorData = window.sensorData;
+        let sensorData = [];
         const temperatureHistory = [];
         let chartInstance = null;
         let updateInterval = null;
@@ -534,7 +641,7 @@
             });
         }
 
-        window.updateDashboard = function() {
+        function updateDashboard() {
             document.getElementById("sensor-table-body").innerHTML = renderSensorTableRows(sensorData);
             document.getElementById("total-records").textContent = sensorData.length;
             renderStatsOverview(sensorData);
@@ -664,20 +771,19 @@
     <script>
     const THINGSPEAK_READ_KEY = "DKQFNX6KPDVR1Z0O";
     const THINGSPEAK_CHANNEL  = "3343001";
+    const CONTROL_CHANNEL     = "3348569";
+    const CONTROL_WRITE_KEY   = "R4MEWHWOE7DDXPBT";
+    const CONTROL_READ_KEY    = "MF0F4WE0OGCKHLRT";
+
+    let fanState   = 0;
+    let lightState = 0;
 
     async function fetchThingSpeak() {
         try {
             const url = "https://api.thingspeak.com/channels/" + THINGSPEAK_CHANNEL + "/feeds.json?api_key=" + THINGSPEAK_READ_KEY + "&results=50";
             const response = await fetch(url);
             const data = await response.json();
-
-            if (!data.feeds || data.feeds.length === 0) {
-                console.log("No feeds received from ThingSpeak");
-                return;
-            }
-
-            console.log("ThingSpeak feeds received:", data.feeds.length);
-
+            if (!data.feeds || data.feeds.length === 0) return;
             window.sensorData = data.feeds.reverse().map(function(feed, i) {
                 return {
                     id: i + 1,
@@ -691,19 +797,72 @@
                     })
                 };
             });
-
             sensorData = window.sensorData;
             window.updateDashboard();
-        } catch(err) {
-            console.error("ThingSpeak fetch error:", err);
+        } catch(err) { console.error("ThingSpeak fetch error:", err); }
+    }
+
+    async function fetchControlState() {
+        try {
+            const url = "https://api.thingspeak.com/channels/" + CONTROL_CHANNEL + "/feeds/last.json?api_key=" + CONTROL_READ_KEY;
+            const response = await fetch(url);
+            const data = await response.json();
+            if (!data) return;
+            fanState   = parseInt(data.field1) || 0;
+            lightState = parseInt(data.field2) || 0;
+            updateControlButtons();
+        } catch(err) { console.error("Control fetch error:", err); }
+    }
+
+    function updateControlButtons() {
+        var fanBtn     = document.getElementById("fan-btn");
+        var lightBtn   = document.getElementById("light-btn");
+        var fanBadge   = document.getElementById("fan-status-badge");
+        var lightBadge = document.getElementById("light-status-badge");
+        if (!fanBtn) return;
+
+        if (fanState === 1) {
+            fanBtn.innerHTML = "<i class='fas fa-power-off mr-2'></i>Turn OFF Fan";
+            fanBtn.className = "w-full py-3 rounded-lg font-semibold text-white transition duration-200 bg-accent hover:bg-blue-600";
+            fanBadge.textContent = "ON";
+            fanBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-green-900/50 text-green-400";
+        } else {
+            fanBtn.innerHTML = "<i class='fas fa-power-off mr-2'></i>Turn ON Fan";
+            fanBtn.className = "w-full py-3 rounded-lg font-semibold text-white transition duration-200 bg-gray-700 hover:bg-accent";
+            fanBadge.textContent = "OFF";
+            fanBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-gray-700 text-gray-300";
+        }
+        if (lightState === 1) {
+            lightBtn.innerHTML = "<i class='fas fa-power-off mr-2'></i>Turn OFF Light";
+            lightBtn.className = "w-full py-3 rounded-lg font-semibold text-white transition duration-200 bg-yellow-600 hover:bg-yellow-700";
+            lightBadge.textContent = "ON";
+            lightBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-yellow-900/50 text-yellow-400";
+        } else {
+            lightBtn.innerHTML = "<i class='fas fa-power-off mr-2'></i>Turn ON Light";
+            lightBtn.className = "w-full py-3 rounded-lg font-semibold text-white transition duration-200 bg-gray-700 hover:bg-accent";
+            lightBadge.textContent = "OFF";
+            lightBadge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-gray-700 text-gray-300";
         }
     }
 
-    // Wait for page to fully load then fetch
+    window.toggleControl = async function(device) {
+        try {
+            if (device === "fan")   fanState   = fanState   === 1 ? 0 : 1;
+            if (device === "light") lightState = lightState === 1 ? 0 : 1;
+            updateControlButtons();
+            const url = "https://api.thingspeak.com/update?api_key=" + CONTROL_WRITE_KEY + "&field1=" + fanState + "&field2=" + lightState;
+            const result = await (await fetch(url)).text();
+            console.log("Control sent, entry:", result);
+            if (result === "0") alert("Too fast! ThingSpeak needs 15 seconds between updates.");
+        } catch(err) { console.error("Toggle error:", err); }
+    }
+
     window.addEventListener("load", function() {
         setTimeout(function() {
             fetchThingSpeak();
+            fetchControlState();
             setInterval(fetchThingSpeak, 16000);
+            setInterval(fetchControlState, 16000);
         }, 1000);
     });
     </script>
