@@ -283,7 +283,8 @@
 
     <script>
         // Data layer
-        let sensorData = [];
+        window.sensorData = [];
+        let sensorData = window.sensorData;
         const temperatureHistory = [];
         let chartInstance = null;
         let updateInterval = null;
@@ -533,7 +534,7 @@
             });
         }
 
-        function updateDashboard() {
+        window.updateDashboard = function() {
             document.getElementById("sensor-table-body").innerHTML = renderSensorTableRows(sensorData);
             document.getElementById("total-records").textContent = sensorData.length;
             renderStatsOverview(sensorData);
@@ -661,39 +662,50 @@
         });
     </script>
     <script>
-  const THINGSPEAK_READ_KEY = "DKQFNX6KPDVR1Z0O";
-  const THINGSPEAK_CHANNEL  = "2992223"; // <-- UPDATE with your channel ID
+    const THINGSPEAK_READ_KEY = "DKQFNX6KPDVR1Z0O";
+    const THINGSPEAK_CHANNEL  = "3343001";
 
-  async function fetchThingSpeak() {
-    try {
-      const url = `https://api.thingspeak.com/channels/${THINGSPEAK_CHANNEL}/feeds.json?api_key=${THINGSPEAK_READ_KEY}&results=50`;
-      const response = await fetch(url);
-      const data = await response.json();
+    async function fetchThingSpeak() {
+        try {
+            const url = "https://api.thingspeak.com/channels/" + THINGSPEAK_CHANNEL + "/feeds.json?api_key=" + THINGSPEAK_READ_KEY + "&results=50";
+            const response = await fetch(url);
+            const data = await response.json();
 
-      if (!data.feeds || data.feeds.length === 0) return;
+            if (!data.feeds || data.feeds.length === 0) {
+                console.log("No feeds received from ThingSpeak");
+                return;
+            }
 
-      window.sensorData = data.feeds.reverse().map((feed, i) => ({
-        id: i + 1,
-        temperature: parseFloat(feed.field1) || 0,
-        gas:  feed.field2 || 'OFF',
-        fire: feed.field3 || 'OFF',
-        ldr:  feed.field4 || 'Unknown',
-        displayTime: new Date(feed.created_at).toLocaleString('en-IN', {
-          day: '2-digit', month: 'short', year: 'numeric',
-          hour: '2-digit', minute: '2-digit', second: '2-digit'
-        })
-      }));
+            console.log("ThingSpeak feeds received:", data.feeds.length);
 
-      window.updateDashboard();
-    } catch(err) {
-      console.error("ThingSpeak fetch error:", err);
+            window.sensorData = data.feeds.reverse().map(function(feed, i) {
+                return {
+                    id: i + 1,
+                    temperature: parseFloat(feed.field1) || 0,
+                    gas:  feed.field2 === "1" ? "ON" : "OFF",
+                    fire: feed.field3 === "1" ? "ON" : "OFF",
+                    ldr:  feed.field4 === "1" ? "Light" : "Dark",
+                    displayTime: new Date(feed.created_at).toLocaleString("en-IN", {
+                        day: "2-digit", month: "short", year: "numeric",
+                        hour: "2-digit", minute: "2-digit", second: "2-digit"
+                    })
+                };
+            });
+
+            sensorData = window.sensorData;
+            window.updateDashboard();
+        } catch(err) {
+            console.error("ThingSpeak fetch error:", err);
+        }
     }
-  }
 
-  // Fetch immediately on load, then every 16 seconds
-  // (ThingSpeak free tier updates every 15 seconds minimum)
-  fetchThingSpeak();
-  setInterval(fetchThingSpeak, 16000);
-</script>
+    // Wait for page to fully load then fetch
+    window.addEventListener("load", function() {
+        setTimeout(function() {
+            fetchThingSpeak();
+            setInterval(fetchThingSpeak, 16000);
+        }, 1000);
+    });
+    </script>
 </body>
 </html>
