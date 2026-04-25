@@ -171,7 +171,7 @@
                 <div class="bg-dark-light rounded-xl p-6 border border-gray-800">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-gray-400 text-sm">Gas Detection</p>
+                            <p class="text-gray-400 text-sm">Gas Detector Reading</p>
                             <p id="gas-status" class="text-2xl font-bold text-white mt-2">OFF</p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-green-900/30 flex items-center justify-center">
@@ -186,7 +186,7 @@
                 <div class="bg-dark-light rounded-xl p-6 border border-gray-800">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-gray-400 text-sm">Fire Detection</p>
+                            <p class="text-gray-400 text-sm">Fire Detector </p>
                             <p id="fire-status" class="text-2xl font-bold text-white mt-2">OFF</p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-green-900/30 flex items-center justify-center">
@@ -348,8 +348,8 @@
                             <tr class="bg-gray-900/50">
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">S.No</th>
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">Temperature (°C)</th>
-                                <th class="py-3 px-6 text-left text-gray-300 font-medium">Gas Detection</th>
-                                <th class="py-3 px-6 text-left text-gray-300 font-medium">Fire Detection</th>
+                                <th class="py-3 px-6 text-left text-gray-300 font-medium">Gas Detector Reading</th>
+                                <th class="py-3 px-6 text-left text-gray-300 font-medium">Fire Detector Reading</th>
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">LDR Status</th>
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">Date & Time</th>
                             </tr>
@@ -658,7 +658,7 @@
         }
 
         function exportToCSV() {
-            const headers = ["S.No", "Temperature (°C)", "Gas Detection", "Fire Detection", "LDR Status", "Date & Time"];
+            const headers = ["S.No", "Temperature (°C)", "Gas Detector Reading", "Fire Detector Reading", "LDR Status", "Date & Time"];
             const csvData = [
                 headers.join(","),
                 ...sensorData.map(record => [
