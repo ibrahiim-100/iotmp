@@ -350,7 +350,7 @@
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">Temperature (°C)</th>
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">Gas Detector Reading</th>
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">Fire Detector Reading</th>
-                                <th class="py-3 px-6 text-left text-gray-300 font-medium">LDR Status</th>
+                                <th class="py-3 px-6 text-left text-gray-300 font-medium">LDR Reading</th>
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">Date & Time</th>
                             </tr>
                         </thead>
@@ -658,7 +658,7 @@
         }
 
         function exportToCSV() {
-            const headers = ["S.No", "Temperature (°C)", "Gas Detector Reading", "Fire Detector Reading", "LDR Status", "Date & Time"];
+            const headers = ["S.No", "Temperature (°C)", "Gas Detector Reading", "Fire Detector Reading", "LDR Reading", "Date & Time"];
             const csvData = [
                 headers.join(","),
                 ...sensorData.map(record => [
