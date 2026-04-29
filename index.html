@@ -649,7 +649,7 @@
 
         // Initialize dashboard
         function initializeDashboard() {
-            // generateInitialData();
+            generateInitialData();
             updateDashboard();
             // startAutoRefresh();
             updateCurrentTime();
@@ -745,6 +745,17 @@
                 };
             });
             sensorData = window.sensorData;
+            temperatureHistory.length = 0;
+
+data.feeds.reverse().forEach(feed => {
+    temperatureHistory.push({
+        time: new Date(feed.created_at).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        }),
+        temp: parseFloat(feed.field1) || 0
+    });
+});
             window.updateDashboard();
         } catch(err) { console.error("ThingSpeak fetch error:", err); }
     }
