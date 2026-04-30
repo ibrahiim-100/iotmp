@@ -297,7 +297,7 @@
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">Temperature (°C)</th>
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">Gas Detection</th>
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">Fire Detection</th>
-                                <!-- <th class="py-3 px-6 text-left text-gray-300 font-medium">LDR Status</th> -->
+                                <th class="py-3 px-6 text-left text-gray-300 font-medium">LDR Status</th>
                                 <th class="py-3 px-6 text-left text-gray-300 font-medium">Date & Time</th>
                             </tr>
                         </thead>
@@ -649,7 +649,7 @@
 
         // Initialize dashboard
         function initializeDashboard() {
-            generateInitialData();
+            // generateInitialData();
             updateDashboard();
             // startAutoRefresh();
             updateCurrentTime();
@@ -725,40 +725,50 @@
     let fanState   = 0;
     let lightState = 0;
 
-    async function fetchThingSpeak() {
-        try {
-            const url = "https://api.thingspeak.com/channels/" + THINGSPEAK_CHANNEL + "/feeds.json?api_key=" + THINGSPEAK_READ_KEY + "&results=50";
-            const response = await fetch(url);
-            const data = await response.json();
-            if (!data.feeds || data.feeds.length === 0) return;
-            window.sensorData = data.feeds.reverse().map(function(feed, i) {
-                return {
-                    id: i + 1,
-                    temperature: parseFloat(feed.field1) || 0,
-                    gas:  feed.field2 === "1" ? "ON" : "OFF",
-                    fire: feed.field3 === "1" ? "ON" : "OFF",
-                    ldr:  feed.field4 === "1" ? "Light" : "Dark",
-                    displayTime: new Date(feed.created_at).toLocaleString("en-IN", {
-                        day: "2-digit", month: "short", year: "numeric",
-                        hour: "2-digit", minute: "2-digit", second: "2-digit"
-                    })
-                };
-            });
-            sensorData = window.sensorData;
-            temperatureHistory.length = 0;
+async function fetchThingSpeak() {
+    try {
+        const url = "https://api.thingspeak.com/channels/" +
+            THINGSPEAK_CHANNEL +
+            "/feeds.json?api_key=" +
+            THINGSPEAK_READ_KEY +
+            "&results=20";
 
-data.feeds.reverse().forEach(feed => {
-    temperatureHistory.push({
-        time: new Date(feed.created_at).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit'
-        }),
-        temp: parseFloat(feed.field1) || 0
-    });
-});
-            window.updateDashboard();
-        } catch(err) { console.error("ThingSpeak fetch error:", err); }
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data.feeds || data.feeds.length === 0) return;
+
+        sensorData = [];
+        temperatureHistory.length = 0;
+
+        data.feeds.reverse().forEach((feed, i) => {
+
+            const temp = parseFloat(feed.field1) || 0;
+
+            sensorData.push({
+                id: i + 1,
+                temperature: temp,
+                gas: feed.field2 === "1" ? "ON" : "OFF",
+                fire: feed.field3 === "1" ? "ON" : "OFF",
+                ldr: feed.field4 === "1" ? "Light" : "Dark",
+                displayTime: new Date(feed.created_at).toLocaleString()
+            });
+
+            temperatureHistory.push({
+                time: new Date(feed.created_at).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                temp: temp
+            });
+        });
+
+        updateDashboard();
+
+    } catch(err) {
+        console.error(err);
     }
+}
 
     async function fetchControlState() {
         try {
