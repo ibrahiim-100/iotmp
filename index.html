@@ -54,6 +54,9 @@
         @keyframes borderPulse { 0%,100%{border-color:#e53e3e} 50%{border-color:#fc8181} }
         .btn-cooldown { opacity: 0.5; cursor: not-allowed; }
         .state-normal    { background: rgba(56,161,105,0.15); border-color: #38a169; }
+        .led { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+        .led-on  { background: #38a169; box-shadow: 0 0 8px 2px rgba(56,161,105,0.7); animation: pulse 1.5s ease-in-out infinite; }
+        .led-off { background: #4a5568; box-shadow: none; }
         .state-alert     { background: rgba(214,158,46,0.15); border-color: #d69e2e; }
         .state-emergency { background: rgba(229,62,62,0.15);  border-color: #e53e3e; }
     </style>
@@ -228,6 +231,10 @@
                             </div>
                             <span id="power-badge" class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-700 text-gray-300">OFF</span>
                         </div>
+                        <div class="flex items-center gap-2 mb-3">
+                            <div id="power-led" class="led led-off"></div>
+                            <span id="power-led-label" class="text-xs text-gray-400">Power is OFF</span>
+                        </div>
                         <button id="power-btn" onclick="toggleControl('power')"
                             class="w-full py-2.5 rounded-lg font-medium text-sm text-white transition bg-gray-700 hover:bg-yellow-700">
                             <i class="fas fa-power-off mr-1"></i>Turn ON
@@ -247,6 +254,10 @@
                                 </div>
                             </div>
                             <span id="gas-badge" class="px-2 py-1 rounded-full text-xs font-semibold bg-green-900/50 text-green-400">OPEN</span>
+                        </div>
+                        <div class="flex items-center gap-2 mb-3">
+                            <div id="gas-led" class="led led-on"></div>
+                            <span id="gas-led-label" class="text-xs text-gray-400">Valve is OPEN</span>
                         </div>
                         <button id="gas-btn" onclick="toggleControl('gas')"
                             class="w-full py-2.5 rounded-lg font-medium text-sm text-white transition bg-green-800 hover:bg-green-700">
@@ -268,6 +279,10 @@
                             </div>
                             <span id="fan-badge" class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-700 text-gray-300">OFF</span>
                         </div>
+                        <div class="flex items-center gap-2 mb-3">
+                            <div id="fan-led" class="led led-off"></div>
+                            <span id="fan-led-label" class="text-xs text-gray-400">Fan is OFF</span>
+                        </div>
                         <button id="fan-btn" onclick="toggleControl('fan')"
                             class="w-full py-2.5 rounded-lg font-medium text-sm text-white transition bg-gray-700 hover:bg-accent">
                             <i class="fas fa-power-off mr-1"></i>Turn ON
@@ -287,6 +302,10 @@
                                 </div>
                             </div>
                             <span id="safety-badge" class="px-2 py-1 rounded-full text-xs font-semibold bg-safe/20 text-safe">NORMAL</span>
+                        </div>
+                        <div class="flex items-center gap-2 mb-3">
+                            <div id="safety-led" class="led led-off"></div>
+                            <span id="safety-led-label" class="text-xs text-gray-400">State: NORMAL</span>
                         </div>
                         <button id="safety-btn" onclick="triggerSafety()"
                             class="w-full py-2.5 rounded-lg font-medium text-sm text-white transition bg-red-900/60 hover:bg-red-700">
@@ -447,7 +466,17 @@
                 ctrlGas   = parseInt(data.field3) || 0;
                 ctrlMode  = parseInt(data.field4) || 0;
 
-                updateControlUI();
+                // fields 6,7,8 = actual hardware state reported by Arduino
+                var actualFan   = parseInt(data.field6);
+                var actualPower = parseInt(data.field7);
+                var actualGas   = parseInt(data.field8);
+
+                // Use actual state for LEDs if available, fall back to command state
+                var ledFan   = isNaN(actualFan)   ? ctrlFan   : actualFan;
+                var ledPower = isNaN(actualPower)  ? ctrlPower : actualPower;
+                var ledGas   = isNaN(actualGas)    ? ctrlGas   : actualGas;
+
+                updateControlUI(ledFan, ledPower, ledGas);
                 updateStateBanner(ctrlMode);
 
                 // Show emergency box if mode is 2
@@ -510,7 +539,7 @@
             if (device === "fan")   ctrlFan   = ctrlFan   === 1 ? 0 : 1;
             if (device === "power") ctrlPower = ctrlPower === 1 ? 0 : 1;
             if (device === "gas")   ctrlGas   = ctrlGas   === 1 ? 0 : 1;
-            updateControlUI();
+            updateButtonsOnly(); // Only update buttons — LEDs wait for Arduino confirmation
             await sendControl(ctrlFan, ctrlPower, ctrlGas, ctrlMode, 0);
         }
 
@@ -534,7 +563,7 @@
                 ctrlGas   = 0;
             }
 
-            updateControlUI();
+            updateButtonsOnly();
             updateStateBanner(ctrlMode);
             await sendControl(ctrlFan, ctrlPower, ctrlGas, ctrlMode, 0);
         }
@@ -547,7 +576,7 @@
             ctrlPower = 1;
             ctrlGas   = 0;
             ctrlMode  = 0;
-            updateControlUI();
+            updateButtonsOnly();
             updateStateBanner(0);
             document.getElementById("emergency-box").classList.add("hidden");
             await sendControl(0, 1, 0, 0, 1);
@@ -556,13 +585,57 @@
         // =========================================================
         //  Update control button UI
         // =========================================================
-        function updateControlUI() {
+        // Updates only buttons and badges — NOT LEDs
+        // Called on button click so UI feels responsive
+        function updateButtonsOnly() {
+            setBtn("power-btn", "power-badge",
+                ctrlPower, "Turn OFF", "Turn ON",
+                "bg-yellow-600 hover:bg-yellow-700", "bg-gray-700 hover:bg-yellow-700",
+                "ON", "OFF",
+                "bg-yellow-900/50 text-yellow-400", "bg-gray-700 text-gray-300");
+            setBtn("fan-btn", "fan-badge",
+                ctrlFan, "Turn OFF Fan", "Turn ON Fan",
+                "bg-accent hover:bg-blue-600", "bg-gray-700 hover:bg-accent",
+                "ON", "OFF",
+                "bg-green-900/50 text-green-400", "bg-gray-700 text-gray-300");
+            var gasBtn   = document.getElementById("gas-btn");
+            var gasBadge = document.getElementById("gas-badge");
+            if (ctrlGas === 1) {
+                gasBtn.innerHTML     = "<i class='fas fa-valve mr-1'></i>Open Valve";
+                gasBtn.className     = "w-full py-2.5 rounded-lg font-medium text-sm text-white transition bg-red-800 hover:bg-red-700";
+                gasBadge.textContent = "CLOSED";
+                gasBadge.className   = "px-2 py-1 rounded-full text-xs font-semibold bg-red-900/50 text-red-400";
+            } else {
+                gasBtn.innerHTML     = "<i class='fas fa-valve mr-1'></i>Close Valve";
+                gasBtn.className     = "w-full py-2.5 rounded-lg font-medium text-sm text-white transition bg-green-800 hover:bg-green-700";
+                gasBadge.textContent = "OPEN";
+                gasBadge.className   = "px-2 py-1 rounded-full text-xs font-semibold bg-green-900/50 text-green-400";
+            }
+            var safetyBadge = document.getElementById("safety-badge");
+            var safetyBtn   = document.getElementById("safety-btn");
+            var modes       = ["NORMAL","ALERT","EMERGENCY"];
+            var nextLabels  = ["Trigger Alert","Trigger Emergency","Reset to Normal"];
+            var badgeClasses= ["bg-safe/20 text-safe","bg-yellow-900/50 text-yellow-400","bg-red-900/50 text-red-400"];
+            safetyBadge.textContent = modes[ctrlMode] || "NORMAL";
+            safetyBadge.className   = "px-2 py-1 rounded-full text-xs font-semibold " + (badgeClasses[ctrlMode] || badgeClasses[0]);
+            safetyBtn.innerHTML     = "<i class='fas fa-shield-alt mr-1'></i>" + (nextLabels[ctrlMode] || nextLabels[0]);
+        }
+
+        // Updates buttons AND LEDs — called only from fetchControlState
+        // LEDs reflect actual hardware state from Arduino (field6/7/8)
+        function updateControlUI(ledFan, ledPower, ledGas) {
+            // Default LED values to command state if not provided
+            if (ledFan   === undefined) ledFan   = ctrlFan;
+            if (ledPower === undefined) ledPower = ctrlPower;
+            if (ledGas   === undefined) ledGas   = ctrlGas;
+
             // Power
             setBtn("power-btn", "power-badge",
                 ctrlPower, "Turn OFF", "Turn ON",
                 "bg-yellow-600 hover:bg-yellow-700", "bg-gray-700 hover:bg-yellow-700",
                 "ON", "OFF",
                 "bg-yellow-900/50 text-yellow-400", "bg-gray-700 text-gray-300");
+            setLed("power-led", "power-led-label", ledPower, "Power is ON", "Power is OFF");
 
             // Fan
             setBtn("fan-btn", "fan-badge",
@@ -570,6 +643,7 @@
                 "bg-accent hover:bg-blue-600", "bg-gray-700 hover:bg-accent",
                 "ON", "OFF",
                 "bg-green-900/50 text-green-400", "bg-gray-700 text-gray-300");
+            setLed("fan-led", "fan-led-label", ledFan, "Fan is ON", "Fan is OFF");
 
             // Gas (inverted: 0=open=good, 1=closed=danger)
             const gasBtn   = document.getElementById("gas-btn");
@@ -585,6 +659,25 @@
                 gasBadge.textContent = "OPEN";
                 gasBadge.className = "px-2 py-1 rounded-full text-xs font-semibold bg-green-900/50 text-green-400";
             }
+            // Gas LED (open=green, closed=gray) — uses actual hardware state
+            var gasLed   = document.getElementById("gas-led");
+            var gasLabel = document.getElementById("gas-led-label");
+            if (ledGas === 1) {
+                gasLed.className     = "led led-off";
+                gasLabel.textContent = "Valve is CLOSED";
+                gasLabel.className   = "text-xs text-gray-400";
+            } else {
+                gasLed.className     = "led led-on";
+                gasLabel.textContent = "Valve is OPEN";
+                gasLabel.className   = "text-xs text-green-400";
+            }
+            // Safety LED
+            var safetyLed   = document.getElementById("safety-led");
+            var safetyLabel = document.getElementById("safety-led-label");
+            var safetyLedClass = ["led led-off","led led-on","led led-on"];
+            safetyLed.className     = safetyLedClass[ctrlMode] || safetyLedClass[0];
+            safetyLabel.textContent = "State: " + (["NORMAL","ALERT","EMERGENCY"][ctrlMode] || "NORMAL");
+            safetyLabel.className   = ctrlMode === 0 ? "text-xs text-gray-400" : "text-xs text-green-400";
 
             // Safety button
             const safetyBtn   = document.getElementById("safety-btn");
@@ -599,6 +692,21 @@
             safetyBadge.textContent = modes[ctrlMode] || "NORMAL";
             safetyBadge.className   = "px-2 py-1 rounded-full text-xs font-semibold " + (badgeClasses[ctrlMode] || badgeClasses[0]);
             safetyBtn.innerHTML     = "<i class='fas fa-shield-alt mr-1'></i>" + (nextLabels[ctrlMode] || nextLabels[0]);
+        }
+
+        function setLed(ledId, labelId, state, onText, offText) {
+            var led   = document.getElementById(ledId);
+            var label = document.getElementById(labelId);
+            if (!led) return;
+            if (state === 1) {
+                led.className   = "led led-on";
+                label.textContent = onText;
+                label.className = "text-xs text-green-400";
+            } else {
+                led.className   = "led led-off";
+                label.textContent = offText;
+                label.className = "text-xs text-gray-400";
+            }
         }
 
         function setBtn(btnId, badgeId, state, onLabel, offLabel, onClass, offClass, onBadge, offBadge, onBadgeClass, offBadgeClass) {
